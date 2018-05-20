@@ -79,52 +79,50 @@ the contents of c
 
 -}
 
+manyIO f xs = sequence $ f <$> xs
+manyIOIgnore f xs = void $ manyIO f xs
+
 -- Given the file name, and file contents, print them.
 -- Use @putStrLn@.
 printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo: Course.FileIO#printFile"
+printFile p ss = manyIOIgnore putStrLn (("============ " ++ p) :. ss :. Nil)
 
 -- Given a list of (file name and file contents), print each.
 -- Use @printFile@.
 printFiles ::
   List (FilePath, Chars)
   -> IO ()
-printFiles =
-  error "todo: Course.FileIO#printFiles"
+printFiles ts = manyIOIgnore printFileT ts --void $ sequence $ printFileT <$> ts
+  where printFileT = uncurry printFile
 
 -- Given a file name, return (file name and file contents).
 -- Use @readFile@.
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo: Course.FileIO#getFile"
+getFile p = ((,)p) <$> (readFile p)
 
 -- Given a list of file names, return list of (file name and file contents).
 -- Use @getFile@.
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
-getFiles =
-  error "todo: Course.FileIO#getFiles"
+getFiles ps = manyIO getFile ps
 
 -- Given a file name, read it and for each line in that file, read and print contents of each.
 -- Use @getFiles@ and @printFiles@.
 run ::
   FilePath
   -> IO ()
-run =
-  error "todo: Course.FileIO#run"
+run p = printFiles =<< getFiles =<< lines <$> readFile p
 
 -- /Tip:/ use @getArgs@ and @run@
 main ::
   IO ()
-main =
-  error "todo: Course.FileIO#main"
+main = run =<< (headOr "??--NO ARG PROVIDED--??") <$> getArgs
 
 ----
 

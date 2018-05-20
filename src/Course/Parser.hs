@@ -119,9 +119,9 @@ constantParser =
 -- True
 character ::
   Parser Char
-character =
-  error "todo: Course.Parser#character"
-
+character = P takeFirstOr
+  where takeFirstOr (c:.cs) = Result cs c
+        takeFirstOr _ = UnexpectedEof
 -- | Parsers can map.
 -- Write a Functor instance for a @Parser@.
 --
@@ -132,8 +132,13 @@ instance Functor Parser where
     (a -> b)
     -> Parser a
     -> Parser b
-  (<$>) =
-     error "todo: Course.Parser (<$>)#instance Parser"
+  (<$>) f p = P (\cs -> case parse p cs of 
+                          Result i x -> Result i $ f x
+                          UnexpectedEof -> UnexpectedEof
+                          ExpectedEof c -> ExpectedEof c
+                          UnexpectedChar c -> UnexpectedChar c
+                          UnexpectedString cs' -> UnexpectedString cs')
+
 
 -- | Return a parser that always succeeds with the given value and consumes no input.
 --
@@ -142,8 +147,7 @@ instance Functor Parser where
 valueParser ::
   a
   -> Parser a
-valueParser =
-  error "todo: Course.Parser#valueParser"
+valueParser a = P (\cs -> Result cs a)
 
 -- | Return a parser that tries the first parser for a successful value.
 --
@@ -166,8 +170,9 @@ valueParser =
   Parser a
   -> Parser a
   -> Parser a
-(|||) =
-  error "todo: Course.Parser#(|||)"
+(|||) p q = P (\cs -> case parse p cs of
+                        Result i r -> Result i r
+                        _ -> parse q cs)
 
 infixl 3 |||
 
@@ -198,8 +203,12 @@ instance Monad Parser where
     (a -> Parser b)
     -> Parser a
     -> Parser b
-  (=<<) =
-    error "todo: Course.Parser (=<<)#instance Parser"
+  (=<<) f p = P (\i -> case parse p i of
+                        Result j x -> parse (f x) j
+                        UnexpectedEof -> UnexpectedEof
+                        ExpectedEof c -> ExpectedEof c
+                        UnexpectedChar c -> UnexpectedChar c
+                        UnexpectedString cs -> UnexpectedString cs)
 
 -- | Write an Applicative functor instance for a @Parser@.
 -- /Tip:/ Use @(=<<)@.
