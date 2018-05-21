@@ -567,12 +567,12 @@ phoneParser = (\k -> (\ks -> pure (k:.ks) <* is '#') =<< phoneBodyParser) =<< di
 -- Result >< Person 123 "Fred" "Clarkson" True "123-456.789"
 personParser ::
   Parser Person
-personParser = bindAge =<< ageParser
-  where bindPhone age fname sname smoker phone = pure $ Person age fname sname smoker phone
-        bindSmoker age fname sname smoker = (bindPhone age fname sname smoker =<< phoneParser) <* spaces1
-        bindSureName age fname sname = (bindSmoker age fname sname =<< smokerParser) <* spaces1
-        bindFirstName age fname = (bindSureName age fname =<< surnameParser) <* spaces1
-        bindAge age = (bindFirstName age =<< firstNameParser) <* spaces1
+personParser = ageParser >>=~ (\age -> firstNameParser >>=~
+                              (\fname -> surnameParser >>=~
+                                (\sname -> smokerParser >>=~
+                                  (\smoker -> phoneParser >>=
+                                    (\phone -> pure $ Person age fname sname smoker phone)
+                                  ))))
         
         
       
