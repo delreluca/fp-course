@@ -82,8 +82,18 @@ data Op =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 convertInteractive ::
   IO ()
-convertInteractive =
-  error "todo: Course.Interactive#convertInteractive"
+convertInteractive = vooid (untilM
+                              (\s ->
+                                if s == "" 
+                                  then
+                                    putStrLn "Bye!" >-
+                                    pure True
+                                  else
+                                    pure False)
+                              (putStr "Enter a text (or nothing to quit): " >-
+                              getLine >>= \s ->
+                              putStrLn (toUpper <$> s) >-
+                              pure s))
 
 -- |
 --
@@ -110,12 +120,16 @@ convertInteractive =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 reverseInteractive ::
   IO ()
-reverseInteractive =
-  error "todo: Course.Interactive#reverseInteractive"
-
+reverseInteractive = vooid $ getPathI >>= (\i -> getPathO >>= (\o -> writeFile o =<< reverse <$> readFile i))
+  where isNonEmpty s = case s of
+                    "" -> pure False
+                    _ -> pure True
+        askForPath s = putStr s >- getLine
+        getPathI = untilM isNonEmpty $ askForPath "Enter input path: "
+        getPathO = untilM isNonEmpty $ askForPath "Enter output path: "
 -- |
 --
--- * Ask the user to enter a string to url-encode.
+-- * Ask the user to enter a string to url-encodeC.
 --
 -- * Convert the string with a URL encoder.
 --
@@ -136,8 +150,15 @@ reverseInteractive =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 encodeInteractive ::
   IO ()
-encodeInteractive =
-  error "todo: Course.Interactive#encodeInteractive"
+encodeInteractive = vooid $ untilM isNotEmpty askNEncode
+    where isNotEmpty = pure . (== "")
+          askNEncode = putStr "Enter something to encodeC: " >- getLine >>= (\s -> putStrLn (encode s) >- pure s)
+          encodeC ' ' = listh "%20"
+          encodeC '\t' = listh "%09"
+          encodeC '\"' = listh "%22"
+          encodeC x = x:.Nil
+          encode Nil = Nil 
+          encode (s:.ss) = encodeC s ++ encode ss
 
 interactive ::
   IO ()
